@@ -32,12 +32,9 @@ const LoginScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#4285F4" />
-        </TouchableOpacity>
+        <View style={styles.logoContainer}>
+          <Ionicons name="chatbubble-ellipses" size={40} color="#4285F4" />
+        </View>
         <Text style={styles.title}>Log In</Text>
       </View>
       
@@ -97,26 +94,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 20,
+    justifyContent: 'center',
   },
   headerContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 30,
-    marginTop: 10,
   },
-  backButton: {
-    marginRight: 15,
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F0F7FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
+    textAlign: 'center',
   },
   form: {
-    flex: 1,
+    width: '90%',
+    maxWidth: 400,
+    alignSelf: 'center',
+    alignItems: 'center',
   },
   inputContainer: {
     marginBottom: 20,
+    width: '100%',
   },
   label: {
     fontSize: 14,
@@ -129,13 +136,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   button: {
     backgroundColor: '#4285F4',
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 20,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   buttonText: {
     color: '#fff',

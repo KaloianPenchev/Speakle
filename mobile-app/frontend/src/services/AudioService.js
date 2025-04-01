@@ -21,47 +21,60 @@ class AudioService {
   
   async playTTS(text, voice) {
     if (!text) {
-      throw new Error('No text provided for TTS');
+      console.warn('No text provided for TTS');
+      return null;
     }
     
-    const permissionGranted = await this.requestPermissions();
-    if (!permissionGranted) {
-      throw new Error('Audio permissions are required for text-to-speech');
-    }
-    
-    await this.configureAudio();
-    
-    const sound = new Audio.Sound();
-    
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.didJustFinish) {
-        sound.unloadAsync();
-      }
-    });
+    // Default to alloy if voice is not provided
+    const voiceToUse = voice || 'alloy';
     
     try {
-      const testResponse = await fetch(`${API_URL}/`);
-      if (testResponse.status >= 400) {
-        throw new Error(`Cannot connect to server at ${API_URL}`);
+      const permissionGranted = await this.requestPermissions();
+      if (!permissionGranted) {
+        console.error('Audio permissions are required for text-to-speech');
+        return null;
       }
-    } catch (error) {
-      throw new Error(`Network error: ${error.message}`);
-    }
-    
-    const ttsUrl = `${API_URL}/api/audio/tts?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}`;
-    
-    try {
-      await sound.loadAsync({ 
-        uri: ttsUrl,
-        headers: {
-          'Cache-Control': 'no-cache'
+      
+      await this.configureAudio();
+      
+      const sound = new Audio.Sound();
+      
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          sound.unloadAsync();
         }
       });
       
-      await sound.playAsync();
-      return sound;
+      try {
+        const testResponse = await fetch(`${API_URL}/`);
+        if (testResponse.status >= 400) {
+          console.error(`Cannot connect to server at ${API_URL}`);
+          return null;
+        }
+      } catch (error) {
+        console.error(`Network error: ${error.message}`);
+        return null;
+      }
+      
+      const ttsUrl = `${API_URL}/api/audio/tts?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voiceToUse)}`;
+      
+      try {
+        await sound.loadAsync({ 
+          uri: ttsUrl,
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        await sound.playAsync();
+        return sound;
+      } catch (error) {
+        console.error(`Failed to play audio: ${error.message}`);
+        return null;
+      }
     } catch (error) {
-      throw new Error(`Failed to play audio: ${error.message}`);
+      console.error(`TTS error: ${error.message}`);
+      return null;
     }
   }
   

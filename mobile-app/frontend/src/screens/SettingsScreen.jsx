@@ -73,23 +73,37 @@ const SettingsScreen = () => {
     try {
       setLoading(true);
       setSelectedVoice(voiceId);
-      await AsyncStorage.setItem('selectedVoice', voiceId.toString());
       
-      if (user) {
-        try {
-          await profileService.updateVoice(voiceId);
-        } catch (apiError) {
-          console.warn('Could not save profile to API, saved locally only');
-        }
-      }
+      // Always save to AsyncStorage first to ensure local persistence
+      await AsyncStorage.setItem('selectedVoice', voiceId.toString());
       
       const voiceName = voiceIdToName[voiceId];
       if (voiceName) {
         await AsyncStorage.setItem('voiceName', voiceName);
       }
+      
+      // Then try to save to the database if user is logged in
+      if (user && user.id) {
+        try {
+          // Save to database with the new endpoint
+          const updatedProfile = await profileService.updateVoice(voiceId);
+          console.log('Voice preference updated in database', updatedProfile);
+        } catch (apiError) {
+          console.error('API Error updating voice:', apiError);
+          
+          // Even if the API call fails, the app will still use the locally stored voice preference
+          if (apiError.message && apiError.message.includes('Unauthorized')) {
+            // Handle silently - no alerts
+            logout();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
+          }
+        }
+      }
     } catch (error) {
       console.error('Error saving voice selection:', error);
-      Alert.alert('Error', 'Failed to save voice preference. Please try again.');
     } finally {
       setLoading(false);
     }

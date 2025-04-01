@@ -20,16 +20,31 @@ const LiveConversationScreen = () => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        // First try to get voice name directly (more reliable)
+        const savedVoiceName = await AsyncStorage.getItem('voiceName');
+        if (savedVoiceName) {
+          console.log('Using saved voice name in conversation:', savedVoiceName);
+          setSelectedVoice(savedVoiceName);
+          return;
+        }
+        
+        // Fall back to voice ID if needed
         const savedVoice = await AsyncStorage.getItem('selectedVoice');
         if (savedVoice) {
           if (!isNaN(savedVoice)) {
             const voiceId = parseInt(savedVoice, 10);
-            setSelectedVoice(getVoiceNameById(voiceId));
+            const voiceName = getVoiceNameById(voiceId);
+            console.log(`Converting voice ID ${voiceId} to name in conversation: ${voiceName}`);
+            setSelectedVoice(voiceName);
+            
+            // Also save the voice name for future use
+            await AsyncStorage.setItem('voiceName', voiceName);
           } else {
             setSelectedVoice(savedVoice);
           }
         }
       } catch (error) {
+        console.error('Error loading conversation voice settings:', error);
       }
     };
 
@@ -145,7 +160,7 @@ const LiveConversationScreen = () => {
     try {
       await AudioService.playTTS(recognizedText, selectedVoice);
     } catch (error) {
-      Alert.alert('TTS Error', error.message);
+      console.error('TTS Error:', error.message);
     }
   };
   

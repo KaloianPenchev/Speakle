@@ -1,9 +1,6 @@
 import Constants from 'expo-constants';
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 
-                Constants.manifest?.extra?.apiUrl || 
-                process.env.EXPO_PUBLIC_API_URL || 
-                'http://192.168.201.206:5000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 class ApiService {
   constructor() {

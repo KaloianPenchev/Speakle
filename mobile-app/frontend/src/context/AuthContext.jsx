@@ -23,8 +23,19 @@ export const AuthProvider = ({ children }) => {
           const { user, token } = JSON.parse(sessionData);
           setUser(user);
           setAuthToken(token);
+          
+          // Verify if token is valid and refresh it if needed
+          try {
+            const response = await authService.validateToken();
+            if (response && response.valid) {
+              console.log('Token validation successful');
+            }
+          } catch (error) {
+            console.warn('Token validation failed, will need to re-login');
+          }
         }
       } catch (error) {
+        console.error('Error loading session:', error);
       } finally {
         setLoading(false);
       }
@@ -35,15 +46,23 @@ export const AuthProvider = ({ children }) => {
 
   const storeSession = async (userData, token) => {
     try {
+      // Store the session data in AsyncStorage
       await AsyncStorage.setItem(
         SESSION_KEY,
         JSON.stringify({ user: userData, token })
       );
+      
+      // Also store user data separately for easier access
+      if (userData && userData.id) {
+        await AsyncStorage.setItem('userId', userData.id.toString());
+      }
+      
+      // If user has voice preference, store it
+      if (userData && userData.voice !== undefined) {
+        await AsyncStorage.setItem('selectedVoice', userData.voice.toString());
+      }
     } catch (error) {
-      Alert.alert(
-        'Session Storage Error',
-        'Could not save your session. You may need to log in again next time.'
-      );
+      console.error('Session storage error:', error);
     }
   };
 

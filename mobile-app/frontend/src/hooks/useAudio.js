@@ -10,17 +10,30 @@ export default function useAudio() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        
         const savedVoice = await AsyncStorage.getItem('selectedVoice');
-        if (savedVoice) {
+        const savedVoiceName = await AsyncStorage.getItem('voiceName');
+        
+        
+        if (savedVoiceName) {
+          setSelectedVoice(savedVoiceName);
+        } 
+        
+        else if (savedVoice) {
           if (!isNaN(savedVoice)) {
             const voiceId = parseInt(savedVoice, 10);
-            setSelectedVoice(getVoiceNameById(voiceId));
+            const voiceName = getVoiceNameById(voiceId);
+            console.log(`Converting voice ID ${voiceId} to name: ${voiceName}`);
+            setSelectedVoice(voiceName);
+            
+            await AsyncStorage.setItem('voiceName', voiceName);
           } else {
+            
             setSelectedVoice(savedVoice);
           }
         }
       } catch (error) {
-        console.error('Error loading settings:', error);
+        console.error('Error loading audio settings:', error);
       }
     };
 
@@ -57,14 +70,19 @@ export default function useAudio() {
     try {
       const result = await AudioService.checkOpenAIConnectivity();
       
-      Alert.alert(
-        'OpenAI API Check',
-        result.success 
-          ? \✅ Connection successful!\n\nModels: \\nTTS-1 Available: \\
-          : \❌ Connection failed\
-      );
+
+      return {
+        success: result.success,
+        message: result.success 
+          ? `Connection successful!\n\nModels: \nTTS-1 Available: `
+          : `Connection failed`
+      };
     } catch (error) {
-      Alert.alert('OpenAI API Check Error', error.message);
+      console.error('OpenAI API Check Error:', error.message);
+      return {
+        success: false,
+        message: `Error checking API: ${error.message}`
+      };
     }
   };
   

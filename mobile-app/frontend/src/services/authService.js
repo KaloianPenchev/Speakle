@@ -43,6 +43,19 @@ const authService = {
     } catch (error) {
       throw error.response?.data || { message: 'Network error' };
     }
+  },
+  
+  validateToken: async () => {
+    try {
+      // This will implicitly validate the token because of the authentication middleware
+      const response = await apiClient.get('/api/profile');
+      return { valid: true, data: response.data };
+    } catch (error) {
+      if (error.response?.status === 401) {
+        return { valid: false, reason: 'unauthorized' };
+      }
+      return { valid: false, reason: 'network_error' };
+    }
   }
 };
 

@@ -9,4 +9,6 @@ router.get('/', profileController.getProfile);
 
 router.put('/', profileController.updateProfile);
 
+router.post('/voice', profileController.updateVoice);
+
 module.exports = router;
