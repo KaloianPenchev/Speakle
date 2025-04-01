@@ -13,37 +13,47 @@ const HomeScreen = () => {
   const displayName = user?.user_metadata?.username || 
                       (user?.email ? user.email.split('@')[0] : 'Anonymous');
   
-  // Dummy conversation data
   const conversations = [
     {
       id: '1',
       title: 'Meeting with John',
-      preview: 'Hello, how are you doing today? I wanted to discuss...',
-      time: '2m ago'
+      description: 'Hello, how are you doing today? I wanted to discuss...',
+      started_at: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+      messages: [],
+      is_favorite: false
     },
     {
       id: '2',
       title: 'Coffee Chat',
-      preview: 'Thanks for meeting me at the café. The discussion was...',
-      time: '1h ago'
+      description: 'Thanks for meeting me at the café. The discussion was...',
+      started_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      messages: [],
+      is_favorite: true
     },
     {
       id: '3',
       title: 'Team Update',
-      preview: 'The project timeline has been updated. We need to...',
-      time: 'Yesterday'
+      description: 'The project timeline has been updated. We need to...',
+      started_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      messages: [],
+      is_favorite: false
     },
     {
       id: '4',
       title: 'Product Review',
-      preview: 'I have looked at the latest version and I think the UI improvements are...',
-      time: '2d ago'
+      description: 'I have looked at the latest version and I think the UI improvements are...',
+      started_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      messages: [],
+      is_favorite: false
     }
   ];
 
-  const handleConversationPress = (conversationId) => {
-    console.log(`Conversation ${conversationId} pressed`);
-    // Navigation logic would go here
+  const handleConversationPress = (conversation) => {
+    console.log('Conversation pressed:', conversation.id);
+  };
+
+  const handleDeleteConversation = (conversationId) => {
+    console.log('Delete conversation:', conversationId);
   };
 
   const handleStartConversation = () => {
@@ -54,7 +64,6 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <Navbar />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Stats section */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>247</Text>
@@ -76,7 +85,6 @@ const HomeScreen = () => {
           </View>
         </View>
 
-        {/* Start Conversation Button */}
         <TouchableOpacity 
           style={styles.startButton}
           onPress={handleStartConversation}
@@ -85,7 +93,6 @@ const HomeScreen = () => {
           <Text style={styles.startButtonText}>Start Conversation</Text>
         </TouchableOpacity>
 
-        {/* Search Box */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
           <TextInput 
@@ -95,15 +102,13 @@ const HomeScreen = () => {
           />
         </View>
 
-        {/* Conversation History */}
         <View style={styles.conversationsContainer}>
           {conversations.map(conversation => (
             <ConversationItem
               key={conversation.id}
-              title={conversation.title}
-              preview={conversation.preview}
-              time={conversation.time}
-              onPress={() => handleConversationPress(conversation.id)}
+              conversation={conversation}
+              onPress={handleConversationPress}
+              onDelete={handleDeleteConversation}
             />
           ))}
         </View>
@@ -202,3 +207,4 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen; 
+

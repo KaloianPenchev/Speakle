@@ -1,24 +1,52 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { format } from 'date-fns';
 
-const ConversationItem = ({ title, preview, time, onPress }) => {
+const ConversationItem = ({ conversation, onPress, onDelete }) => {
+  if (!conversation) {
+    return null;
+  }
+  
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return format(date, 'MMM d, yyyy h:mm a');
+    } catch (error) {
+      return 'Unknown date';
+    }
+  };
+  
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
-      <View style={styles.contentContainer}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.preview} numberOfLines={2}>
-          {preview}
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => onPress(conversation)}
+    >
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.date}>
+            {conversation.started_at ? formatDate(conversation.started_at) : 'Unknown date'}
+          </Text>
+          {conversation.is_favorite && (
+            <Ionicons name="star" size={16} color="#FFD700" />
+          )}
+        </View>
+        
+        <Text style={styles.title} numberOfLines={1}>
+          {conversation.title || 'Untitled Conversation'}
+        </Text>
+        
+        <Text style={styles.subtitle} numberOfLines={2}>
+          {conversation.description || `${conversation.messages?.length || 0} messages`}
         </Text>
       </View>
       
-      <View style={styles.rightContainer}>
-        <Text style={styles.time}>{time}</Text>
-        <TouchableOpacity style={styles.playButton}>
-          <Ionicons name="play" size={16} color="#4285F4" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.expandButton}>
-          <Ionicons name="expand" size={16} color="#4285F4" />
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => onDelete(conversation.id)}
+        >
+          <Ionicons name="trash-outline" size={24} color="#FF3B30" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -27,46 +55,47 @@ const ConversationItem = ({ title, preview, time, onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 12,
-    elevation: 1,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    flexDirection: 'row',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  contentContainer: {
+  content: {
     flex: 1,
-    paddingRight: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  date: {
+    fontSize: 12,
+    color: '#888',
+    marginRight: 6,
   },
   title: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  preview: {
+  subtitle: {
     fontSize: 14,
     color: '#666',
-    lineHeight: 20,
   },
-  rightContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+  buttonsContainer: {
   },
-  time: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 8,
-  },
-  playButton: {
-    marginBottom: 8,
-  },
-  expandButton: {
-    // No margin needed for the last item
+  deleteButton: {
+    padding: 5,
   },
 });
 

@@ -1,68 +1,93 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
-const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+const LoginScreen = ({ route }) => {
+  const { email: routeEmail } = route.params || {};
+  const navigation = useNavigation();
+  const { login } = useAuth();
+  
+  const [email, setEmail] = useState(routeEmail || '');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-
+  const [error, setError] = useState('');
+  
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
     try {
+      setError('');
       setLoading(true);
+      
       await login(email, password);
+      navigation.navigate('Home');
     } catch (error) {
-      Alert.alert('Error', error.message || 'An unexpected error occurred');
+      console.error('Login error:', error);
+      setError(error.message || 'Failed to log in');
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Log In</Text>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#4285F4" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Log In</Text>
+      </View>
       
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#A7A7A7"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#A7A7A7"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleLogin}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Logging in...' : 'Log In'}
-        </Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.linkContainer} 
-        onPress={() => navigation.navigate('SignUp')}
-      >
-        <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
-      </TouchableOpacity>
+      <View style={styles.form}>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Your email address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+        
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+        
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Log In</Text>
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          onPress={() => navigation.navigate('SignUp')}
+          style={styles.linkButton}
+        >
+          <Text style={styles.linkText}>
+            Don't have an account? Sign up
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -70,45 +95,67 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     padding: 20,
-    justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+    marginTop: 10,
+  },
+  backButton: {
+    marginRight: 15,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
     color: '#333',
   },
+  form: {
+    flex: 1,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#555',
+  },
   input: {
-    backgroundColor: '#FFFFFF',
-    padding: 15,
+    backgroundColor: '#F5F5F5',
     borderRadius: 10,
-    marginBottom: 15,
+    padding: 15,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#EEEEEE',
   },
   button: {
-    backgroundColor: '#4A90E2',
-    padding: 15,
+    backgroundColor: '#4285F4',
+    padding: 16,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
-  linkContainer: {
+  errorText: {
+    color: '#FF3B30',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  linkButton: {
     marginTop: 20,
+    padding: 10,
     alignItems: 'center',
   },
   linkText: {
-    color: '#4A90E2',
-    fontSize: 16,
+    color: '#4285F4',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

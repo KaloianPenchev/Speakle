@@ -1,22 +1,19 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Platform, StatusBar, SafeAreaView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import Avatar from './Avatar';
+import { useNavigation } from '@react-navigation/native';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
-  
+  const { user } = useAuth();
+  const navigation = useNavigation();
   
   const displayName = user?.user_metadata?.username || 
                       (user?.email ? user.email.split('@')[0] : 'Anonymous');
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const handleSettingsPress = () => {
+    navigation.navigate('Settings');
   };
 
   return (
@@ -35,8 +32,8 @@ const Navbar = () => {
           </View>
         </View>
         
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <FontAwesome name="sign-out" size={24} color="#4285F4" />
+        <TouchableOpacity onPress={handleSettingsPress} style={styles.settingsButton}>
+          <Ionicons name="settings-outline" size={24} color="#4285F4" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -96,7 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  logoutButton: {
+  settingsButton: {
     padding: 8,
   },
 });

@@ -1,66 +1,264 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import Avatar from '../components/Avatar';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, StatusBar, Alert, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../context/AuthContext';
+import AudioService from '../services/AudioService';
+import ApiService from '../services/ApiService';
+import SocketService from '../services/SocketService';
 
 const LiveConversationScreen = () => {
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [isMuted, setIsMuted] = useState(false);
-  const [isMicOn, setIsMicOn] = useState(true);
+  const [recognizedText, setRecognizedText] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [conversationId, setConversationId] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(true);
+  
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const savedVoice = await AsyncStorage.getItem('selectedVoice');
+        if (savedVoice) {
+          if (!isNaN(savedVoice)) {
+            const voiceId = parseInt(savedVoice, 10);
+            setSelectedVoice(getVoiceNameById(voiceId));
+          } else {
+            setSelectedVoice(savedVoice);
+          }
+        }
+      } catch (error) {
+      }
+    };
 
-  const handleEndCall = () => {
-    navigation.navigate('Home');
+    loadSettings();
+  }, []);
+  
+  const getVoiceNameById = (voiceId) => {
+    const voiceNames = {
+      0: 'alloy',
+      1: 'echo',
+      2: 'fable',
+      3: 'onyx',
+      4: 'nova',
+      5: 'shimmer'
+    };
+    return voiceNames[voiceId] || 'alloy';
+  };
+  
+  useEffect(() => {
+    let isMounted = true;
+    let gestureHandler = null;
+    
+    const setupConnection = async () => {
+      try {
+        SocketService.connect();
+        
+        SocketService.on('connect', () => {
+          if (isMounted) {
+            setIsConnecting(false);
+          }
+        });
+        
+        SocketService.on('connect_error', () => {
+          if (isMounted) {
+            setIsConnecting(false);
+            Alert.alert('Warning', 'Could not connect to gesture recognition system');
+          }
+        });
+        
+        gestureHandler = SocketService.on('gestureDetected', (data) => {
+          if (isMounted) setRecognizedText(data.text);
+        });
+        
+        await startConversation();
+      } catch (error) {
+        if (isMounted) setIsConnecting(false);
+      }
+    };
+    
+    setupConnection();
+    
+    return () => {
+      isMounted = false;
+      if (conversationId) {
+        endConversation().catch(() => {});
+      }
+      
+      if (gestureHandler) {
+        gestureHandler();
+      }
+      
+      SocketService.disconnect();
+    };
+  }, []);
+  
+  const startConversation = async () => {
+    try {
+      const userId = user?.id || await AsyncStorage.getItem('userId') || `anonymous-${Date.now()}`;
+      
+      if (!user?.id && !await AsyncStorage.getItem('userId')) {
+        await AsyncStorage.setItem('userId', userId);
+      }
+      
+      const result = await ApiService.startConversation(userId);
+      
+      if (result.success) {
+        setConversationId(result.conversation.id);
+      } else {
+        Alert.alert('Error', 'Failed to start conversation. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Connection Error',
+        'Could not connect to conversation service. Continue anyway?',
+        [
+          { 
+            text: 'Cancel', 
+            onPress: () => navigation.goBack(), 
+            style: 'cancel' 
+          },
+          { 
+            text: 'Continue', 
+            onPress: () => {} 
+          }
+        ]
+      );
+    }
+  };
+  
+  const endConversation = async () => {
+    try {
+      if (!conversationId) return;
+      
+      const result = await ApiService.endConversation(conversationId);
+    } catch (error) {
+      // Silent error - don't block the user from leaving
+    }
+  };
+  
+  const handleTTS = async () => {
+    if (!recognizedText || isMuted) return;
+    
+    try {
+      await AudioService.playTTS(recognizedText, selectedVoice);
+    } catch (error) {
+      Alert.alert('TTS Error', error.message);
+    }
+  };
+  
+  const testTTS = async () => {
+    try {
+      await AudioService.testTTS();
+      Alert.alert('TTS Test', 'Testing the Text-to-Speech function.');
+    } catch (error) {
+      Alert.alert('Test TTS Failed', `Error: ${error.message}`);
+    }
+  };
+  
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+  };
+  
+  const handleCancelConversation = async () => {
+    try {
+      Alert.alert(
+        'End Conversation',
+        'Are you sure you want to end this conversation?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'End Conversation',
+            onPress: async () => {
+              try {
+                if (conversationId) {
+                  await endConversation().catch(() => {});
+                }
+                navigation.navigate('Home');
+              } catch (error) {
+                navigation.navigate('Home');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      navigation.navigate('Home');
+    }
+  };
+
+  const checkOpenAIConnectivity = async () => {
+    try {
+      const result = await AudioService.checkOpenAIConnectivity();
+      
+      Alert.alert(
+        'OpenAI API Check',
+        result.success 
+          ? `Connection successful!\n\nModels: ${result.modelCount}\nTTS-1 Available: ${result.hasRequiredModels ? 'Yes' : 'No'}`
+          : `Connection failed`
+      );
+    } catch (error) {
+      Alert.alert('OpenAI API Check Error', error.message);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5F5F5" />
       
-      {/* Top controls - Settings only */}
-      <View style={styles.topControls}>
-        <TouchableOpacity style={styles.controlButton}>
-          <Ionicons name="settings-sharp" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-      
-      {/* Central Avatar */}
-      <View style={styles.avatarContainer}>
-        <View style={styles.avatarWrapper}>
-          <Avatar size={120} />
-          <View style={styles.statusIndicator} />
-        </View>
-      </View>
-      
-      {/* Bottom Controls - Mute, Mic, End Call */}
-      <View style={styles.bottomControls}>
+      <View style={styles.topSection}>
         <TouchableOpacity 
-          style={styles.bottomControlButton}
-          onPress={() => setIsMuted(!isMuted)}
+          style={[styles.ttsButton, { marginTop: 20 }]}
+          onPress={handleTTS}
+        >
+          <Ionicons name="volume-high" size={40} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.ttsHint}>Tap to speak recognized gesture</Text>
+      </View>
+      
+      <ScrollView 
+        style={styles.scrollableMiddle}
+        contentContainerStyle={styles.middleContentContainer}
+      >
+        {recognizedText ? (
+          <View style={styles.textContainer}>
+            <Text style={styles.recognizedText}>{recognizedText}</Text>
+          </View>
+        ) : (
+          <Text style={styles.waitingText}>
+            Waiting for gesture...
+          </Text>
+        )}
+      </ScrollView>
+      
+      <View style={styles.bottomSection}>
+        <TouchableOpacity 
+          style={styles.controlButton}
+          onPress={handleMuteToggle}
         >
           <Ionicons 
             name={isMuted ? "volume-mute" : "volume-high"} 
             size={26} 
             color="#333"
           />
+          <Text style={styles.buttonLabel}>
+            {isMuted ? "Unmute" : "Mute"}
+          </Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.bottomControlButton}
-          onPress={() => setIsMicOn(!isMicOn)}
+          style={[styles.controlButton, styles.cancelButton]}
+          onPress={handleCancelConversation}
         >
-          <Ionicons 
-            name={isMicOn ? "mic" : "mic-off"} 
-            size={26} 
-            color="#333"
-          />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.bottomControlButton, styles.endCallButton]}
-          onPress={handleEndCall}
-        >
-          <Ionicons name="close" size={26} color="#FFF" />
+          <Ionicons name="close-circle" size={26} color="#FF3B30" />
+          <Text style={[styles.buttonLabel, styles.cancelLabel]}>
+            Cancel
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -71,70 +269,101 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-    alignItems: 'center',
   },
-  topControls: {
+  topSection: {
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F5F5F5',
+    zIndex: 1,
+  },
+  scrollableMiddle: {
+    flex: 1,
+    backgroundColor: '#F0F0F0',
+  },
+  middleContentContainer: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+  bottomSection: {
+    height: 120,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 40,
+    backgroundColor: '#F5F5F5',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    zIndex: 1,
+  },
+  ttsButton: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#4285F4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  ttsHint: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  textContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
     width: '100%',
-    paddingHorizontal: 20,
-    paddingTop: 30,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  recognizedText: {
+    fontSize: 18,
+    color: '#333',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  waitingText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    marginVertical: 30,
   },
   controlButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  avatarContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarWrapper: {
-    position: 'relative',
-  },
-  statusIndicator: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
     borderRadius: 12,
-    backgroundColor: '#4CAF50',
-    borderWidth: 3,
-    borderColor: '#F5F5F5',
-    bottom: 5,
-    right: 5,
-  },
-  bottomControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-  },
-  bottomControlButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'white',
-    justifyContent: 'center',
+    padding: 16,
+    width: 150,
     alignItems: 'center',
-    marginHorizontal: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 3,
   },
-  endCallButton: {
-    backgroundColor: '#FF3B30',
+  cancelButton: {
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1,
+    borderColor: '#FFDDDD',
+  },
+  buttonLabel: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#333',
+  },
+  cancelLabel: {
+    color: '#FF3B30',
   },
 });
 
