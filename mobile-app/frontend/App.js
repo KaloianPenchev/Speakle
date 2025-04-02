@@ -9,7 +9,6 @@ import HomeScreen from './src/screens/HomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import LiveConversationScreen from './src/screens/LiveConversationScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,26 +25,10 @@ export default function App() {
               cardStyle: { backgroundColor: '#fff' }
             }}
           >
-            <Stack.Screen 
-              name="Home" 
-              component={HomeScreen} 
-            />
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen} 
-            />
-            <Stack.Screen 
-              name="SignUp" 
-              component={SignUpScreen} 
-            />
-            <Stack.Screen 
-              name="Settings" 
-              component={SettingsScreen} 
-            />
-            <Stack.Screen 
-              name="LiveConversation" 
-              component={LiveConversationScreen} 
-            />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
