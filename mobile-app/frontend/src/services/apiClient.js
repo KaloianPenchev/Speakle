@@ -3,12 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-if (!API_URL) {
-  console.error('EXPO_PUBLIC_API_URL is not defined in environment');
-}
+console.log('API URL from env:', API_URL);
+
+// Fallback to localhost if API_URL is not defined
+const baseURL = API_URL || 'http://192.168.1.1:5000';
+console.log('Using API base URL:', baseURL);
 
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,21 +19,28 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   config => {
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    
     if (!config.retries) {
       config.retries = 0;
     }
     return config;
   },
   error => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
 apiClient.interceptors.response.use(
   response => {
+    console.log(`API Response from ${response.config.url}: Status ${response.status}`);
     return response;
   },
   async error => {
+    console.error('API Error:', error.message);
+    console.error('Failed request URL:', error.config?.url);
+    
     const { config } = error;
     
     if (!config || config.retries === undefined) {
@@ -50,6 +59,7 @@ apiClient.interceptors.response.use(
     
     if (shouldRetry && config.retries > 0) {
       config.retries--;
+      console.log(`Retrying request to ${config.url}, ${config.retries} attempts left`);
       
       const delay = 1000 * Math.pow(2, 3 - config.retries);
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -64,7 +74,7 @@ apiClient.interceptors.response.use(
             }
           }
         } catch (tokenError) {
-          console.error('Error refreshing token during retry:', tokenError);
+          console.error('Token retrieval error:', tokenError);
         }
       }
       
@@ -74,15 +84,6 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-(async () => {
-  try {
-    await apiClient.get('/api');
-    console.log('API connection successful');
-  } catch (error) {
-    console.warn('API connection failed - check backend server');
-  }
-})();
 
 export const setAuthToken = (token) => {
   if (token) {

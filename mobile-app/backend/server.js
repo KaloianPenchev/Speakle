@@ -1,79 +1,57 @@
+require('dotenv').config();
 const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
 const cors = require('cors');
-const morgan = require('morgan');
-const dotenv = require('dotenv');
-const authRoutes = require('./routes/authRoutes');
-const conversationRoutes = require('./routes/conversationRoutes');
-const audioRoutes = require('./routes/audioRoutes');
-const chatRoutes = require('./routes/chatRoutes');
-const { initAudio } = require('./utils/audioUtils');
+const http = require('http');
+const path = require('path');
 
-
-dotenv.config();
-
+// Initialize Express app
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
-});
 
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
+// Enhanced CORS configuration
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
+}));
 
-app.get('/', (req, res) => {
-  res.send('Speakle API server is running');
-});
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.get('/api', (req, res) => {
-  res.json({ status: 'ok', message: 'API server is running' });
-});
+// Add OPTIONS handling for preflight requests
+app.options('*', cors());
 
-
-app.use('/api/auth', authRoutes);
-app.use('/api/conversation', conversationRoutes);
-app.use('/api/audio', audioRoutes);
-app.use('/api/chat', chatRoutes);
-
-const PORT = process.env.PORT || 5000;
-const FLASK_SERVER_URL = process.env.FLASK_SERVER_URL || 'http://localhost:5001';
-
-io.on('connection', (socket) => {
-  console.log('New client connected');
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
-  
-  socket.on('startDetection', () => {
-    console.log('Received start detection request from client');
-    io.emit('startDetection');
-  });
-  
-  socket.on('stopDetection', () => {
-    console.log('Received stop detection request from client');
-    io.emit('stopDetection');
-  });
-  
-  socket.on('gestureDetected', (data) => {
-    console.log('Gesture detected:', data);
-    io.emit('gestureDetected', data);
-  });
-});
-
-
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+  res.status(500).json({ error: 'Internal server error' });
 });
 
+// Health check route
+app.get('/api', (req, res) => {
+  res.json({ message: 'API is running' });
+});
 
-server.listen(PORT, async () => {
-  console.log(`Speakle API server running on port ${PORT}`);
-  await initAudio();
-}); 
+try {
+  // Import routes
+  const speechRoutes = require('./routes/speechRoutes');
+  const authRoutes = require('./routes/authRoutes');
+  const profileRoutes = require('./routes/profileRoutes');
+  
+  // Routes with concise naming
+  app.use('/api', speechRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/user', profileRoutes);
+  
+  // Start the server
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+} catch (error) {
+  console.error('Server startup error:', error.message);
+  process.exit(1);
+}
+
+module.exports = { app, server }; 

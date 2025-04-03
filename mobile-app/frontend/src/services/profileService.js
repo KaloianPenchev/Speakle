@@ -14,7 +14,6 @@ const loadAuthToken = async () => {
     }
     return false;
   } catch (error) {
-    console.error('Error loading auth token:', error);
     return false;
   }
 };
@@ -25,7 +24,7 @@ const profileService = {
       // Ensure token is loaded
       await loadAuthToken();
       
-      const response = await apiClient.get('/api/profile');
+      const response = await apiClient.get('/api/user');
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Network error' };
@@ -37,7 +36,7 @@ const profileService = {
       // Ensure token is loaded
       await loadAuthToken();
       
-      const response = await apiClient.put('/api/profile', profileData);
+      const response = await apiClient.put('/api/user', profileData);
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: 'Network error' };
@@ -56,7 +55,7 @@ const profileService = {
       }
       
       // Instead of using PUT, use POST with the specific endpoint for voice updates
-      const response = await apiClient.post('/api/profile/voice', 
+      const response = await apiClient.post('/api/user/voice', 
         { voice: numericVoiceId },
         { 
           timeout: 5000, // 5 second timeout
@@ -81,8 +80,6 @@ const profileService = {
       
       return response.data;
     } catch (error) {
-      console.error('Voice update error:', error);
-      
       // Save to local storage even if API fails
       try {
         await AsyncStorage.setItem('selectedVoice', voiceId.toString());
@@ -97,7 +94,7 @@ const profileService = {
         const voiceName = voiceNames[parseInt(voiceId, 10)] || 'alloy';
         await AsyncStorage.setItem('voiceName', voiceName);
       } catch (storageError) {
-        console.error('Failed to save voice to local storage:', storageError);
+        // Silently handle storage errors
       }
       
       if (error.response?.status === 401) {
