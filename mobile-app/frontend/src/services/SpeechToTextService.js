@@ -147,21 +147,19 @@ class SpeechToTextService {
         if (status.durationMillis > 2000) {
           console.log("Recording duration > 2s, capturing audio chunk for transcription");
           const currentRecording = this.recording;
-          
-          // Stop the current recording segment
+
           console.log("Stopping current recording segment");
           await this.recording.stopAndUnloadAsync();
           
           const uri = currentRecording.getURI();
           if (uri) {
             console.log("Starting new recording segment");
-            // Start a new recording immediately
+            
             const newRecording = new Audio.Recording();
             await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
             this.recording = newRecording;
             await this.recording.startAsync();
-            
-            // Transcribe the previous segment in the background
+
             console.log("Sending previous segment for transcription");
             this.transcribeAudio(uri).then(result => {
               if (result && this.onTranscriptionUpdate) {
@@ -215,16 +213,13 @@ class SpeechToTextService {
         
         if (retryCount > 0 && (error.message.includes('Network Error') || error.code === 'ECONNABORTED')) {
           console.log(`Retrying transcription (${retryCount} attempts left)...`);
-          // Wait before retrying (exponential backoff)
+          
           const delay = 1000 * Math.pow(2, 3 - retryCount);
           await new Promise(resolve => setTimeout(resolve, delay));
-          
-          // Try with direct URL if using relative URL failed
+
           return this.transcribeAudio(audioUri, retryCount - 1);
         }
-        
-        // If we reach here, all retries failed or it's not a network error
-        // We'll return a reasonable fallback to not block the user experience
+
         if (this.onTranscriptionUpdate) {
           console.warn("All transcription attempts failed, returning fallback message");
           return { text: "[Transcription unavailable. Please check your network connection.]" };

@@ -1,12 +1,12 @@
-import apiClient, { setAuthToken } from './apiClient';
 import authService from './authService';
 import profileService from './profileService';
+import apiClient, { setAuthToken } from './apiClient';
 import SpeechToTextService from './SpeechToTextService';
 
 export {
-  apiClient,
-  setAuthToken,
   authService,
   profileService,
+  apiClient,
+  setAuthToken,
   SpeechToTextService
 }; 
