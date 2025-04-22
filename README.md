@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Speakle is a smart glove designed to bridge the communication gap for the deaf community by translating sign language into spoken voice and converting speech to text. Our mission is to enable seamless interaction between deaf individuals and the hearing world through innovative hardware and advanced machine learning.
+Speakle is a smart glove designed to bridge the communication gap for the deaf community by translating sign language into spoken voice and converting speech to text. Its mission is to enable seamless interaction between deaf individuals and the hearing world through innovative hardware and advanced machine learning.
 
 The project consists of three key components:
 
