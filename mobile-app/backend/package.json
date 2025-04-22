@@ -11,6 +11,7 @@
         "@supabase/supabase-js": "^2.49.4",
         "axios": "^1.8.4",
         "bcrypt": "^5.1.1",
+        "collections": "^5.1.13",
         "cors": "^2.8.5",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
@@ -18,10 +19,22 @@
         "jsonwebtoken": "^9.0.2",
         "morgan": "^1.10.0",
         "multer": "^1.4.5-lts.1",
-        "openai": "^4.91.1",
-        "socket.io": "^4.7.2"
+        "openai": "^4.91.1"
     },
     "devDependencies": {
         "nodemon": "^3.0.1"
-    }
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/yourusername/speakle.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/yourusername/speakle/issues"
+    },
+    "homepage": "https://github.com/yourusername/speakle#readme"
 }

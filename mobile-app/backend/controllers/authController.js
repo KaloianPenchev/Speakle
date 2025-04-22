@@ -58,7 +58,7 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ 
         error: 'User created but profile creation failed', 
         details: profileError.message,
-        userId: authData.user.id
+        user_id: authData.user.id
       });
     }
 

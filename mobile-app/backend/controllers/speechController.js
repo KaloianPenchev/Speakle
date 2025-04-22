@@ -1,16 +1,10 @@
 const fs = require('fs');
 const { OpenAI } = require('openai');
 
-
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-/**
- * Transcribe audio using OpenAI's Whisper model
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
 exports.transcribeAudio = async (req, res) => {
   try {
     console.log('Transcription request received');
@@ -24,9 +18,9 @@ exports.transcribeAudio = async (req, res) => {
     console.log(`Processing audio file: ${filePath}`);
 
     try {
-      // Check if file is valid and has audio content
+      
       const stats = fs.statSync(filePath);
-      if (stats.size < 1000) {  // If file is too small (less than 1KB), it likely has no speech
+      if (stats.size < 1000) { 
         console.log(`Audio file too small (${stats.size} bytes), may not contain speech`);
       }
       
@@ -45,8 +39,7 @@ exports.transcribeAudio = async (req, res) => {
         language: req.body.language || 'en',
         response_format: 'json',
       });
-      
-      // Log and validate the transcript
+
       if (!transcript || !transcript.text) {
         console.log('Transcription returned no text');
         transcript.text = '';

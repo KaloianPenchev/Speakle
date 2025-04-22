@@ -24,7 +24,6 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } 
 });
 
-// Speech-to-text route - shortened to 'transcribe'
 router.post('/transcribe', upload.single('file'), speechController.transcribeAudio);
 
 module.exports = router; 

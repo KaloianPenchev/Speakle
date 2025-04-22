@@ -1,0 +1,47 @@
+{
+  "modelType": "gestureRecognition",
+  "version": "1.0.0",
+  "gestures": [
+    {
+      "id": -1,
+      "name": "collecting_data",
+      "description": "Collecting data mode"
+    },
+    {
+      "id": 0,
+      "name": "scanning",
+      "description": "Scanning/idle gesture"
+    },
+    {
+      "id": 1,
+      "name": "hello",
+      "description": "Hello gesture"
+    },
+    {
+      "id": 2,
+      "name": "my_name_is",
+      "description": "My name is gesture"
+    },
+    {
+      "id": 3,
+      "name": "bye",
+      "description": "Goodbye gesture"
+    }
+  ],
+  "parameters": {
+    "flex_threshold": 0.5,
+    "orientation_weights": {
+      "quat_w": 1.0,
+      "quat_x": 1.0,
+      "quat_y": 1.0,
+      "quat_z": 1.0
+    },
+    "flex_weights": {
+      "flex_little": 1.0,
+      "flex_ring": 1.0,
+      "flex_middle": 1.0,
+      "flex_index": 1.0,
+      "flex_thumb": 1.0
+    }
+  }
+} 

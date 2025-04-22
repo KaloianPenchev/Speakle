@@ -11,4 +11,6 @@ router.put('/', profileController.updateProfile);
 
 router.post('/voice', profileController.updateVoice);
 
+router.post('/language', profileController.updateLanguage);
+
 module.exports = router;
