@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, Platform, StatusBar, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, Platform, StatusBar, Alert, ActivityIndicator, Animated, Easing } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import TextInputSection from '../components/TextInputSection';
 import { SpeechToTextService } from '../services';
+import gestureService from '../services/gestureService';
 
 const HomeScreen = () => {
   const { user } = useAuth();
@@ -14,7 +15,55 @@ const HomeScreen = () => {
   const [recognizedText, setRecognizedText] = useState('');
   const [hasAskedPermission, setHasAskedPermission] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Animation values for the button
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  
+  // Setup animations
+  useEffect(() => {
+    if (isSpeaking) {
+      // Start pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 700,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 700,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+      
+      // Start rotation animation
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      // Stop animations
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+      
+      rotateAnim.setValue(0);
+    }
+  }, [isSpeaking]);
+  
+  // Setup speech recognition
   useEffect(() => {
     SpeechToTextService.setTranscriptionCallback((text) => {
       if (text) {
@@ -35,11 +84,35 @@ const HomeScreen = () => {
   const handleSettingsPress = () => {
     navigation.navigate('Settings');
   };
-  
-  // Handler for the blue circle button (does nothing for now)
-  const handleCircleButtonPress = () => {
-    // This button has no functionality for now
-    console.log("Circle button pressed - no action assigned");
+
+  const handleCircleButtonPress = async () => {
+    if (isSpeaking) {
+      return; // Don't allow multiple presses during speaking
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const result = await gestureService.speakCurrentGesture();
+      
+      if (result.success && result.isPlaying) {
+        setIsSpeaking(true);
+        
+        // When gesture is done playing, reset state
+        setTimeout(() => {
+          setIsSpeaking(false);
+          gestureService.resetLastPlayedGesture();
+        }, 3000); // 3 seconds should be enough for most TTS to complete
+      } else {
+        // No speech played
+        setIsSpeaking(false);
+      }
+    } catch (error) {
+      console.error('Error speaking gesture:', error);
+      Alert.alert('Error', 'Failed to speak the gesture');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleMicPress = async () => {
@@ -90,6 +163,12 @@ const HomeScreen = () => {
     setRecognizedText('');
   };
   
+  // Calculate rotate interpolation
+  const rotateInterpolation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+  
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -104,24 +183,36 @@ const HomeScreen = () => {
 
       <View style={styles.content}>
         <View style={styles.buttonWrapper}>
-          <LinearGradient
-            colors={['#4285F4', '#34A5FF', '#5CBBFF']}
-            locations={[0, 0.6, 1]}
-            style={styles.circleButtonContainer}
+          <Animated.View 
+            style={[
+              styles.animatedContainer,
+              { 
+                transform: [
+                  { scale: pulseAnim },
+                  { rotate: isSpeaking ? rotateInterpolation : '0deg' }
+                ] 
+              }
+            ]}
           >
-            <TouchableOpacity 
-              style={styles.circleButton}
-              onPress={handleCircleButtonPress}
-              activeOpacity={0.8}
-              disabled={isProcessing}
+            <LinearGradient
+              colors={['#4285F4', '#34A5FF', '#5CBBFF']}
+              locations={[0, 0.6, 1]}
+              style={styles.circleButtonContainer}
             >
-              {isProcessing ? (
-                <ActivityIndicator size="large" color="white" />
-              ) : (
-                <Ionicons name="hand-left" size={110} color="white" />
-              )}
-            </TouchableOpacity>
-          </LinearGradient>
+              <TouchableOpacity 
+                style={styles.circleButton}
+                onPress={handleCircleButtonPress}
+                activeOpacity={0.8}
+                disabled={isProcessing || isSpeaking}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator size="large" color="white" />
+                ) : (
+                  <Ionicons name="hand-left" size={110} color="white" />
+                )}
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
         </View>
 
         <View style={styles.bottomSection}>
@@ -170,6 +261,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     paddingVertical: 40,
+  },
+  animatedContainer: {
+    width: 320,
+    height: 320,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   circleButtonContainer: {
     width: 320,

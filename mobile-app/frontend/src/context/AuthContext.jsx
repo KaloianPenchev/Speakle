@@ -23,8 +23,7 @@ export const AuthProvider = ({ children }) => {
           const { user, token } = JSON.parse(sessionData);
           setUser(user);
           setAuthToken(token);
-          
-          // Verify if token is valid and refresh it if needed
+
           try {
             const response = await authService.validateToken();
             if (response && response.valid) {
@@ -46,18 +45,17 @@ export const AuthProvider = ({ children }) => {
 
   const storeSession = async (userData, token) => {
     try {
-      // Store the session data in AsyncStorage
+      console.log('Storing session with token:', token);
+      
       await AsyncStorage.setItem(
         SESSION_KEY,
         JSON.stringify({ user: userData, token })
       );
-      
-      // Also store user data separately for easier access
+
       if (userData && userData.id) {
-        await AsyncStorage.setItem('userId', userData.id.toString());
+        await AsyncStorage.setItem('user_id', userData.id.toString());
       }
-      
-      // If user has voice preference, store it
+
       if (userData && userData.voice !== undefined) {
         await AsyncStorage.setItem('selectedVoice', userData.voice.toString());
       }
@@ -70,8 +68,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const { user, session } = await authService.login(email, password);
       setUser(user);
-      setAuthToken(session.access_token);
-      await storeSession(user, session.access_token);
+      const token = session.access_token;
+      setAuthToken(token);
+      await storeSession(user, token);
       return { user };
     } catch (error) {
       throw error;
@@ -94,8 +93,9 @@ export const AuthProvider = ({ children }) => {
         };
         
         setUser(userData);
-        setAuthToken(response.session.access_token);
-        await storeSession(userData, response.session.access_token);
+        const token = response.session.access_token;
+        setAuthToken(token);
+        await storeSession(userData, token);
         return { user: userData };
       }
       
@@ -105,8 +105,9 @@ export const AuthProvider = ({ children }) => {
           user.username = name;
         }
         setUser(user);
-        setAuthToken(session.access_token);
-        await storeSession(user, session.access_token);
+        const token = session.access_token;
+        setAuthToken(token);
+        await storeSession(user, token);
         return { user, signupData: response };
       } catch (loginError) {
         return { signupData: response, loginFailed: true };

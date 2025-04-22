@@ -36,6 +36,14 @@ const SettingsScreen = () => {
     }
   };
 
+  const navigateToUserAccount = () => {
+    navigation.navigate('UserAccount');
+  };
+
+  const navigateToMyVoice = () => {
+    navigation.navigate('MyVoice');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -50,22 +58,30 @@ const SettingsScreen = () => {
       </View>
 
       <ScrollView style={styles.container}>
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity 
+          style={styles.settingItem}
+          onPress={navigateToUserAccount}
+        >
           <View style={styles.iconContainer}>
             <Ionicons name="person-outline" size={24} color="#4285F4" />
           </View>
           <View style={styles.settingContent}>
             <Text style={styles.settingTitle}>User Account</Text>
+            <Text style={styles.settingDescription}>View your account information</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#C8C8C8" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.settingItem}>
+        <TouchableOpacity 
+          style={styles.settingItem}
+          onPress={navigateToMyVoice}
+        >
           <View style={[styles.iconContainer, { backgroundColor: '#E9F7E9' }]}>
             <Ionicons name="volume-medium-outline" size={24} color="#4285F4" />
           </View>
           <View style={styles.settingContent}>
             <Text style={styles.settingTitle}>My Voice</Text>
+            <Text style={styles.settingDescription}>Change your text-to-speech voice</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#C8C8C8" />
         </TouchableOpacity>
@@ -79,6 +95,7 @@ const SettingsScreen = () => {
           </View>
           <View style={styles.settingContent}>
             <Text style={[styles.settingTitle, { color: '#F44336' }]}>Logout</Text>
+            <Text style={styles.settingDescription}>Sign out of your account</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -147,6 +164,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#333',
+  },
+  settingDescription: {
+    fontSize: 13,
+    color: '#757575',
+    marginTop: 2,
   },
 });
 

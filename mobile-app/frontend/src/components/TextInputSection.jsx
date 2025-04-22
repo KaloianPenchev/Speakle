@@ -12,8 +12,7 @@ const TextInputSection = ({
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [prevTextLength, setPrevTextLength] = useState(0);
-  
-  // Animate text when new content is added
+
   useEffect(() => {
     if (recognizedText && recognizedText.length > prevTextLength) {
       Animated.sequence([
@@ -31,8 +30,7 @@ const TextInputSection = ({
       setPrevTextLength(recognizedText.length);
     }
   }, [recognizedText, fadeAnim, prevTextLength]);
-  
-  // Animate the mic button when listening
+
   useEffect(() => {
     if (isListening) {
       Animated.loop(
@@ -50,14 +48,13 @@ const TextInputSection = ({
         ])
       ).start();
     } else {
-      // Reset animation when stopped
+      
       Animated.timing(pulseAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }).start();
-      
-      // Reset prev text length when stopping to ensure animations work next time
+
       if (prevTextLength > 0 && recognizedText) {
         setPrevTextLength(recognizedText.length);
       }
