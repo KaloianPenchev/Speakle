@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gesture Recognition Visualization</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .gesture-display {
+            font-size: 80px;
+            text-align: center;
+            height: 100px;
+            margin: 20px 0;
+            color: #3498db;
+        }
+        
+        .hand-visualization {
+            display: flex;
+            justify-content: space-around;
+            margin: 40px 0;
+        }
+        
+        .finger {
+            width: 18%;
+            height: 220px;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #ecf0f1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .finger-name {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            z-index: 10;
+        }
+        
+        .finger-value {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .fill-level {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #8fe5b0;
+            transition: height 0.3s ease;
+        }
+        
+        .bent .fill-level {
+            background-color: #f9acaa;
+        }
+        
+        .data-section {
+            display: flex;
+            margin-top: 30px;
+        }
+        
+        .sensor-data {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        
+        .connected {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+        
+        .disconnected {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gesture Recognition Visualization</h1>
+        
+        <div class="status connected" id="connectionStatus">Connected to server</div>
+        
+        <div class="gesture-display" id="gestureDisplay">
+            ?
+        </div>
+        
+        <div class="hand-visualization">
+            <div class="finger" id="littleFinger">
+                <div class="finger-name">Little</div>
+                <div class="fill-level" style="height: 0%"></div>
+                <div class="finger-value">0</div>
+            </div>
+            <div class="finger" id="ringFinger">
+                <div class="finger-name">Ring</div>
+                <div class="fill-level" style="height: 0%"></div>
+                <div class="finger-value">0</div>
+            </div>
+            <div class="finger" id="middleFinger">
+                <div class="finger-name">Middle</div>
+                <div class="fill-level" style="height: 0%"></div>
+                <div class="finger-value">0</div>
+            </div>
+            <div class="finger" id="indexFinger">
+                <div class="finger-name">Index</div>
+                <div class="fill-level" style="height: 0%"></div>
+                <div class="finger-value">0</div>
+            </div>
+            <div class="finger" id="thumbFinger">
+                <div class="finger-name">Thumb</div>
+                <div class="fill-level" style="height: 0%"></div>
+                <div class="finger-value">0</div>
+            </div>
+        </div>
+        
+        <div class="data-section">
+            <div class="sensor-data">
+                <h2>Sensor Data</h2>
+                <div id="sensorData">Waiting for data...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const gestureEmojis = {
+            'collecting_data': '⏳',
+            'scanning': '',
+            'hello': '👋',
+            'My name is': '🤚',
+            'bye': '✋',
+            'unknown': '❓'
+        };
+        
+        const gestureDisplay = document.getElementById('gestureDisplay');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const sensorData = document.getElementById('sensorData');
+        
+        const fingers = {
+            little: document.getElementById('littleFinger'),
+            ring: document.getElementById('ringFinger'),
+            middle: document.getElementById('middleFinger'),
+            index: document.getElementById('indexFinger'),
+            thumb: document.getElementById('thumbFinger')
+        };
+        
+        let updateInterval;
+        const flexThreshold = 1200;
+        let isRequestInProgress = false;  // Flag to prevent overlapping requests
+        let consecutiveErrors = 0;  // Counter for consecutive errors
+        
+        function updateFingerUI(fingerName, value) {
+            const finger = fingers[fingerName];
+            const fillLevel = finger.querySelector('.fill-level');
+            const valueDisplay = finger.querySelector('.finger-value');
+            
+            const min = 600;
+            const max = 1600;
+            const percentage = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+            
+            fillLevel.style.height = `${percentage}%`;
+            
+            valueDisplay.textContent = value;
+            
+            if (value < flexThreshold) {
+                finger.classList.add('bent');
+            } else {
+                finger.classList.remove('bent');
+            }
+        }
+        
+        async function fetchData() {
+            // Prevent multiple overlapping requests which can cause freezing
+            if (isRequestInProgress) {
+                console.log("Request already in progress, skipping this cycle");
+                return;
+            }
+            
+            isRequestInProgress = true;
+            
+            try {
+                // Add timeout to prevent hanging requests
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);  // 2 second timeout
+                
+                const response = await fetch('/data', { 
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update connection status to connected
+                connectionStatus.textContent = 'Connected to server';
+                connectionStatus.className = 'status connected';
+                consecutiveErrors = 0;
+                
+                if (data.flex_little !== undefined) {
+                    updateFingerUI('little', data.flex_little);
+                    updateFingerUI('ring', data.flex_ring);
+                    updateFingerUI('middle', data.flex_middle);
+                    updateFingerUI('index', data.flex_index);
+                    updateFingerUI('thumb', data.flex_thumb);
+                    
+                    sensorData.innerHTML = `
+                        <strong>Flex Sensors:</strong><br>
+                        Little: ${data.flex_little}<br>
+                        Ring: ${data.flex_ring}<br>
+                        Middle: ${data.flex_middle}<br>
+                        Index: ${data.flex_index}<br>
+                        Thumb: ${data.flex_thumb}<br><br>
+                        <strong>Quaternion:</strong><br>
+                        W: ${data.quat_w?.toFixed(3) || 'N/A'}<br>
+                        X: ${data.quat_x?.toFixed(3) || 'N/A'}<br>
+                        Y: ${data.quat_y?.toFixed(3) || 'N/A'}<br>
+                        Z: ${data.quat_z?.toFixed(3) || 'N/A'}
+                    `;
+                    
+                    if (data.gesture_name) {
+                        const emoji = gestureEmojis[data.gesture_name];
+                        gestureDisplay.textContent = emoji ? `${emoji} ${data.gesture_name}` : data.gesture_name;
+                    }
+                } else {
+                    sensorData.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                connectionStatus.textContent = 'Error connecting to server';
+                connectionStatus.className = 'status disconnected';
+                
+                consecutiveErrors++;
+                
+                // If we have too many consecutive errors, slow down the polling
+                if (consecutiveErrors > 5) {
+                    console.log(`Too many consecutive errors (${consecutiveErrors}), slowing down polling rate`);
+                    resetUpdateInterval(500); // Slow down to once every 500ms
+                }
+                
+                // Don't clear the interval, just retry after a delay
+                setTimeout(() => {
+                    console.log('Attempting to reconnect...');
+                }, 2000);
+            } finally {
+                isRequestInProgress = false;
+            }
+        }
+        
+        function resetUpdateInterval(interval) {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+            updateInterval = setInterval(fetchData, interval || 200);
+            console.log(`Polling interval set to ${interval || 200}ms`);
+        }
+        
+        function startUpdates() {
+            fetchData();
+            
+            // Use a slightly longer interval to reduce browser load (200ms instead of 100ms)
+            resetUpdateInterval(200);
+            
+            // Add a heartbeat check every 5 seconds to ensure connection is maintained
+            setInterval(() => {
+                if (connectionStatus.className.includes('disconnected')) {
+                    console.log('Heartbeat check: reconnecting...');
+                    fetchData();
+                }
+                
+                // If we've been stable for a while, reset to normal polling rate
+                if (consecutiveErrors === 0) {
+                    resetUpdateInterval(200);
+                }
+            }, 5000);
+        }
+        
+        // Start updates when DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', startUpdates);
+        
+        // Also start updates immediately (in case DOMContentLoaded already fired)
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            startUpdates();
+        }
+    </script>
+</body>
+</html>
+            
