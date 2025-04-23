@@ -43,7 +43,8 @@ The project consists of three key components:
 
 3. **Gesture Recognition**
    - The server utilizes a custom CNN with softmax activation to identify specific gestures
-   - The model is trained on 3-5 gestures derived from the Austro-Hungarian gesture system, with focus on Bulgarian Sign Language
+   - The model is trained on 3 gestures derived from the Austro-Hungarian gesture system, with focus on Bulgarian Sign Language
+     ![image](https://github.com/KaloianPenchev/Speakle/blob/main/model/saved_model/training_history.png?raw=true)
 
 4. **Mobile App Trigger**
    - The app is activated only when the model is highly confident in its recognition
