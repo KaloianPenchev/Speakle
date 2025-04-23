@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Speakle is a smart glove designed to bridge the communication gap for the deaf community by translating sign language into spoken voice and converting speech to text. Our mission is to enable seamless interaction between deaf individuals and the hearing world through innovative hardware and advanced machine learning.
+Speakle is a smart glove designed to bridge the communication gap for the deaf community by translating sign language into spoken voice and converting speech to text. Its mission is to enable seamless interaction between deaf individuals and the hearing world through innovative hardware and advanced machine learning.
 
 The project consists of three key components:
 
@@ -33,6 +33,9 @@ The project consists of three key components:
 1. **Sensor Data Acquisition**
    - The smart glove collects real-time data from its integrated sensors
    - Flex sensors capture finger positions while IMU tracks hand orientation
+  
+   ![image](https://github.com/user-attachments/assets/fe83da08-acc0-4d1b-8c1f-83a1e2296d86)
+
 
 2. **Data Transmission**
    - Captured sensor data is sent to the Flask server for processing
