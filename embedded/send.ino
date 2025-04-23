@@ -10,11 +10,11 @@ LSM6 imu;
 LIS3MDL mag;
 Madgwick filter;
 
-const int flexLittle = 14;
-const int flexRing = 27;
-const int flexMiddle = 26;
-const int flexIndex = 25;
-const int flexThumb = 33;
+const int flexLittle = 33;
+const int flexRing = 32;
+const int flexMiddle = 35;
+const int flexIndex = 34;
+const int flexThumb = 39;
 
 
 const char* ssid = "YourWiFiSSID";
