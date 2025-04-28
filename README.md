@@ -50,7 +50,7 @@ The project consists of three key components:
    - The app is activated only when the model is highly confident in its recognition
    - Unrecognized gestures result in no action, preventing false triggers
 
-   ![app](https://github.com/user-attachments/assets/a35be530-ea15-458d-98c2-64b937665222)
+   ![app](https://github.com/user-attachments/assets/b5dbecb8-7820-4db2-8a7a-91381d456deb)
 
 
 5. **Voice and Text Conversion**
