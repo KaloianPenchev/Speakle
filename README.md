@@ -50,9 +50,6 @@ The project consists of three key components:
    - The app is activated only when the model is highly confident in its recognition
    - Unrecognized gestures result in no action, preventing false triggers
 
-   ![app](https://github.com/user-attachments/assets/c955a35d-df18-4881-9d1b-a3b3e5b1cfff)
-
-
 5. **Voice and Text Conversion**
    - Upon successful gesture recognition, a GPT model converts the input into spoken voice via TTS
    - Optional STT feature provides additional communication support by converting spoken responses to text
